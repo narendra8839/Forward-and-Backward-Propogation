@@ -1,0 +1,705 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Perceptron Decision Boundary Learning Visualizer</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;600&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #0f172a;
+            color: #f8fafc;
+        }
+        .code-font {
+            font-family: 'Fira Code', monospace;
+        }
+        canvas {
+            touch-action: none;
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col justify-between">
+
+    <!-- Header Section -->
+    <header class="border-b border-slate-800 bg-slate-900/80 backdrop-blur px-6 py-4 sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto flex flex-col sm:flex-row justify-between items-center gap-4">
+            <div class="flex items-center gap-3">
+                <div class="w-9 h-9 bg-indigo-600 rounded-xl flex items-center justify-center font-bold text-white shadow-lg shadow-indigo-500/30">
+                    P
+                </div>
+                <div>
+                    <h1 class="text-xl font-bold tracking-tight text-white">Perceptron Decision Boundary Visualizer</h1>
+                    <p class="text-xs text-slate-400">Step-by-Step Weight & Bias Optimization Simulation</p>
+                </div>
+            </div>
+            
+            <div class="flex items-center gap-2 bg-slate-800 p-1.5 rounded-xl border border-slate-700 text-xs">
+                <span class="text-slate-400 px-2 font-medium">Class Labels:</span>
+                <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 font-semibold">
+                    <span class="w-2.5 h-2.5 rounded-full bg-emerald-400"></span> Class +1
+                </span>
+                <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-rose-500/10 text-rose-400 border border-rose-500/20 font-semibold">
+                    <span class="w-2.5 h-2.5 rounded-full bg-rose-400"></span> Class -1
+                </span>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content Area -->
+    <main class="max-w-7xl w-full mx-auto p-4 sm:p-6 grid grid-cols-1 lg:grid-cols-12 gap-6 flex-1">
+        
+        <!-- Left Column: Controls & Dynamic Mathematical Readout -->
+        <div class="lg:col-span-4 flex flex-col gap-5">
+            
+            <!-- Controls Panel -->
+            <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-xl space-y-5">
+                <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+                    <h2 class="text-sm font-bold uppercase tracking-wider text-slate-300">Simulation Controls</h2>
+                    <span id="epoch-badge" class="px-2.5 py-0.5 rounded-full text-xs font-mono bg-indigo-500/20 text-indigo-300 border border-indigo-500/30">Epoch: 0</span>
+                </div>
+
+                <!-- Action Buttons -->
+                <div class="grid grid-cols-2 gap-2">
+                    <button id="btn-play" class="w-full bg-indigo-600 hover:bg-indigo-500 active:bg-indigo-700 text-white font-semibold py-2.5 px-4 rounded-xl transition flex items-center justify-center gap-2 shadow-lg shadow-indigo-600/20 text-sm">
+                        <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path d="M4 4l12 6-12 6V4z"/></svg>
+                        <span>Start Training</span>
+                    </button>
+                    <button id="btn-step" class="w-full bg-slate-800 hover:bg-slate-700 active:bg-slate-800 text-slate-200 border border-slate-700 font-semibold py-2.5 px-4 rounded-xl transition flex items-center justify-center gap-1.5 text-sm">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 5l7 7-7 7M5 5l7 7-7 7"/></svg>
+                        <span>Single Step</span>
+                    </button>
+                    <button id="btn-reset" class="w-full bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 font-medium py-2 px-3 rounded-xl transition text-xs flex items-center justify-center gap-1">
+                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+                        <span>Reset Weights</span>
+                    </button>
+                    <button id="btn-clear-points" class="w-full bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 font-medium py-2 px-3 rounded-xl transition text-xs flex items-center justify-center gap-1">
+                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                        <span>Reset Points</span>
+                    </button>
+                </div>
+
+                <!-- Sliders -->
+                <div class="space-y-4 pt-1">
+                    <div>
+                        <div class="flex justify-between text-xs mb-1">
+                            <label class="text-slate-400 font-medium">Learning Rate (<span class="code-font">&eta;</span>):</label>
+                            <span id="lr-val" class="code-font text-indigo-400 font-bold">0.10</span>
+                        </div>
+                        <input id="lr-slider" type="range" min="0.01" max="0.50" step="0.01" value="0.10" class="w-full h-1.5 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-indigo-500">
+                    </div>
+
+                    <div>
+                        <div class="flex justify-between text-xs mb-1">
+                            <label class="text-slate-400 font-medium">Animation Delay:</label>
+                            <span id="speed-val" class="code-font text-indigo-400 font-bold">250ms</span>
+                        </div>
+                        <input id="speed-slider" type="range" min="50" max="1000" step="50" value="250" class="w-full h-1.5 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-indigo-500">
+                    </div>
+                </div>
+
+                <!-- Dataset Selection -->
+                <div class="space-y-2 pt-2 border-t border-slate-800">
+                    <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider">Preset Dataset</label>
+                    <div class="grid grid-cols-2 gap-2 text-xs">
+                        <button onclick="loadPreset('separable')" class="preset-btn bg-indigo-600/20 text-indigo-300 border border-indigo-500/40 p-2 rounded-lg text-left font-medium hover:bg-indigo-600/30 transition">
+                            Linearly Separable
+                        </button>
+                        <button onclick="loadPreset('and')" class="preset-btn bg-slate-800 text-slate-400 border border-slate-700 p-2 rounded-lg text-left font-medium hover:bg-slate-700 transition">
+                            AND Logic Gate
+                        </button>
+                        <button onclick="loadPreset('or')" class="preset-btn bg-slate-800 text-slate-400 border border-slate-700 p-2 rounded-lg text-left font-medium hover:bg-slate-700 transition">
+                            OR Logic Gate
+                        </button>
+                        <button onclick="loadPreset('xor')" class="preset-btn bg-slate-800 text-slate-400 border border-slate-700 p-2 rounded-lg text-left font-medium hover:bg-slate-700 transition">
+                            XOR (Will Fail!)
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Mathematical Parameters Dashboard -->
+            <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-xl space-y-4">
+                <h2 class="text-sm font-bold uppercase tracking-wider text-slate-300 border-b border-slate-800 pb-3">
+                    Perceptron Equation & State
+                </h2>
+
+                <div class="bg-slate-950 p-3.5 rounded-xl border border-slate-800 text-center font-mono text-xs text-indigo-300 overflow-x-auto space-y-1">
+                    <div class="text-slate-500 text-[10px]">CURRENT BOUNDARY FORMULA</div>
+                    <div id="equation-display" class="font-bold text-sm text-amber-400">0.00x₁ + 0.00x₂ + 0.00 = 0</div>
+                </div>
+
+                <div class="grid grid-cols-3 gap-2 text-center text-xs code-font">
+                    <div class="bg-slate-800/60 p-2.5 rounded-xl border border-slate-700/50">
+                        <span class="text-slate-400 text-[10px] block mb-0.5">WEIGHT w₁</span>
+                        <span id="w1-val" class="font-bold text-emerald-400 text-sm">0.000</span>
+                    </div>
+                    <div class="bg-slate-800/60 p-2.5 rounded-xl border border-slate-700/50">
+                        <span class="text-slate-400 text-[10px] block mb-0.5">WEIGHT w₂</span>
+                        <span id="w2-val" class="font-bold text-emerald-400 text-sm">0.000</span>
+                    </div>
+                    <div class="bg-slate-800/60 p-2.5 rounded-xl border border-slate-700/50">
+                        <span class="text-slate-400 text-[10px] block mb-0.5">BIAS b</span>
+                        <span id="b-val" class="font-bold text-amber-400 text-sm">0.000</span>
+                    </div>
+                </div>
+
+                <!-- Accuracy / Misclassifications -->
+                <div class="grid grid-cols-2 gap-2 text-center text-xs">
+                    <div class="bg-slate-800/40 p-2.5 rounded-xl border border-slate-800">
+                        <span class="text-slate-400 text-[10px] block">MISCLASSIFIED</span>
+                        <span id="errors-val" class="font-bold text-rose-400 text-base code-font">0 / 0</span>
+                    </div>
+                    <div class="bg-slate-800/40 p-2.5 rounded-xl border border-slate-800">
+                        <span class="text-slate-400 text-[10px] block">ACCURACY</span>
+                        <span id="acc-val" class="font-bold text-indigo-400 text-base code-font">0%</span>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- Right Column: Interactive Canvas & Step Log -->
+        <div class="lg:col-span-8 flex flex-col gap-5">
+            
+            <!-- Canvas Container -->
+            <div class="bg-slate-900 border border-slate-800 rounded-2xl p-4 shadow-xl flex flex-col justify-between relative overflow-hidden">
+                
+                <!-- Canvas Bar Header -->
+                <div class="flex flex-wrap items-center justify-between gap-2 mb-3 px-1">
+                    <div class="flex items-center gap-2 text-xs">
+                        <span class="text-slate-400">Classify Mode:</span>
+                        <button id="add-class1-btn" class="px-2.5 py-1 rounded-lg bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 font-semibold flex items-center gap-1">
+                            + Add Class +1
+                        </button>
+                        <button id="add-class2-btn" class="px-2.5 py-1 rounded-lg bg-slate-800 text-slate-400 border border-slate-700 font-medium flex items-center gap-1">
+                            + Add Class -1
+                        </button>
+                    </div>
+                    <span class="text-[11px] text-slate-500 italic">💡 Click/Tap canvas to add custom data points</span>
+                </div>
+
+                <!-- Canvas Component -->
+                <div class="w-full aspect-square max-h-[500px] bg-slate-950 rounded-xl border border-slate-800 relative flex items-center justify-center overflow-hidden">
+                    <canvas id="perceptronCanvas" class="w-full h-full cursor-crosshair"></canvas>
+                </div>
+
+                <!-- Footer Status Bar -->
+                <div id="status-message" class="mt-3 p-2.5 bg-slate-950 border border-slate-800 rounded-xl text-xs text-slate-300 code-font flex items-center gap-2">
+                    <span class="w-2 h-2 rounded-full bg-indigo-500 animate-pulse"></span>
+                    <span id="status-text">Ready to train. Click 'Start Training' or 'Single Step'.</span>
+                </div>
+            </div>
+
+            <!-- Step Evaluation Log -->
+            <div class="bg-slate-900 border border-slate-800 rounded-2xl p-4 shadow-xl space-y-2">
+                <h3 class="text-xs font-bold uppercase tracking-wider text-slate-400 flex items-center justify-between">
+                    <span>Mathematical Execution Log</span>
+                    <span class="text-[10px] text-slate-500 font-normal">Real-time update traces</span>
+                </h3>
+                <div id="log-container" class="bg-slate-950 border border-slate-800 rounded-xl p-3 h-32 overflow-y-auto font-mono text-[11px] space-y-1 text-slate-400">
+                    <div class="text-slate-600 italic">// Execution logs will appear here during training steps...</div>
+                </div>
+            </div>
+
+        </div>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="border-t border-slate-800 bg-slate-900 py-3 text-center text-xs text-slate-500">
+        Perceptron Decision Boundary Engine • Single-Layer Neural Network Demonstration
+    </footer>
+
+    <script>
+        // --- Core Simulation State ---
+        let points = [];
+        let w = [0.0, 0.0]; // Weights [w1, w2]
+        let b = 0.0;        // Bias
+        let lr = 0.10;      // Learning rate
+        let animationSpeed = 250;
+        let isTraining = false;
+        let trainingInterval = null;
+        let currentPointIndex = 0;
+        let epoch = 0;
+        let activeClassLabel = 1; // 1 or -1
+        let currentHighlightIndex = -1;
+
+        // Canvas Coordinates configuration (-5 to +5 range)
+        const DOMAIN = 5;
+
+        // DOM Element References
+        const canvas = document.getElementById('perceptronCanvas');
+        const ctx = canvas.getContext('2d');
+        const btnPlay = document.getElementById('btn-play');
+        const btnStep = document.getElementById('btn-step');
+        const btnReset = document.getElementById('btn-reset');
+        const btnClearPoints = document.getElementById('btn-clear-points');
+        const lrSlider = document.getElementById('lr-slider');
+        const lrValDisplay = document.getElementById('lr-val');
+        const speedSlider = document.getElementById('speed-slider');
+        const speedValDisplay = document.getElementById('speed-val');
+        const logContainer = document.getElementById('log-container');
+        const statusText = document.getElementById('status-text');
+
+        const w1Display = document.getElementById('w1-val');
+        const w2Display = document.getElementById('w2-val');
+        const bDisplay = document.getElementById('b-val');
+        const eqDisplay = document.getElementById('equation-display');
+        const errorsDisplay = document.getElementById('errors-val');
+        const accDisplay = document.getElementById('acc-val');
+        const epochBadge = document.getElementById('epoch-badge');
+
+        const btnClass1 = document.getElementById('add-class1-btn');
+        const btnClass2 = document.getElementById('add-class2-btn');
+
+        // --- Resize & Setup Canvas ---
+        function resizeCanvas() {
+            const rect = canvas.getBoundingClientRect();
+            canvas.width = rect.width * window.devicePixelRatio;
+            canvas.height = rect.height * window.devicePixelRatio;
+            ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
+            draw();
+        }
+
+        window.addEventListener('resize', resizeCanvas);
+
+        // --- Coordinate Transformation Helpers ---
+        function toCanvasX(x1) {
+            const width = canvas.getBoundingClientRect().width;
+            return ((x1 + DOMAIN) / (2 * DOMAIN)) * width;
+        }
+
+        function toCanvasY(x2) {
+            const height = canvas.getBoundingClientRect().height;
+            return height - ((x2 + DOMAIN) / (2 * DOMAIN)) * height;
+        }
+
+        function toMathX(px) {
+            const width = canvas.getBoundingClientRect().width;
+            return (px / width) * (2 * DOMAIN) - DOMAIN;
+        }
+
+        function toMathY(py) {
+            const height = canvas.getBoundingClientRect().height;
+            return DOMAIN - (py / height) * (2 * DOMAIN);
+        }
+
+        // --- STREAMING_CHUNK:Rendering canvas and mathematical decision boundaries... -->
+        // --- Drawing Routine ---
+        function draw() {
+            const width = canvas.getBoundingClientRect().width;
+            const height = canvas.getBoundingClientRect().height;
+
+            ctx.clearRect(0, 0, width, height);
+
+            // 1. Draw Grid Lines
+            ctx.strokeStyle = '#1e293b';
+            ctx.lineWidth = 1;
+
+            for (let i = -DOMAIN; i <= DOMAIN; i++) {
+                if (i === 0) continue;
+                // Vertical lines
+                ctx.beginPath();
+                ctx.moveTo(toCanvasX(i), 0);
+                ctx.lineTo(toCanvasX(i), height);
+                ctx.stroke();
+
+                // Horizontal lines
+                ctx.beginPath();
+                ctx.moveTo(0, toCanvasY(i));
+                ctx.lineTo(width, toCanvasY(i));
+                ctx.stroke();
+            }
+
+            // 2. Draw Axes
+            ctx.strokeStyle = '#475569';
+            ctx.lineWidth = 2;
+
+            // X axis
+            ctx.beginPath();
+            ctx.moveTo(0, toCanvasY(0));
+            ctx.lineTo(width, toCanvasY(0));
+            ctx.stroke();
+
+            // Y axis
+            ctx.beginPath();
+            ctx.moveTo(toCanvasX(0), 0);
+            ctx.lineTo(toCanvasX(0), height);
+            ctx.stroke();
+
+            // 3. Draw Decision Regions (Shading)
+            if (w[0] !== 0 || w[1] !== 0 || b !== 0) {
+                // Background region coloring
+                const step = 8;
+                for (let px = 0; px < width; px += step) {
+                    for (let py = 0; py < height; py += step) {
+                        const mx = toMathX(px + step / 2);
+                        const my = toMathY(py + step / 2);
+                        const score = w[0] * mx + w[1] * my + b;
+                        ctx.fillStyle = score >= 0 ? 'rgba(16, 185, 129, 0.05)' : 'rgba(244, 63, 94, 0.05)';
+                        ctx.fillRect(px, py, step, step);
+                    }
+                }
+
+                // Draw Boundary Line: w1*x1 + w2*x2 + b = 0 => x2 = (-w1*x1 - b)/w2
+                ctx.save();
+                ctx.strokeStyle = '#f59e0b'; // Amber yellow for decision line
+                ctx.lineWidth = 3;
+                ctx.beginPath();
+
+                if (Math.abs(w[1]) > 0.0001) {
+                    const x1_min = -DOMAIN;
+                    const x2_min = (-w[0] * x1_min - b) / w[1];
+
+                    const x1_max = DOMAIN;
+                    const x2_max = (-w[0] * x1_max - b) / w[1];
+
+                    ctx.moveTo(toCanvasX(x1_min), toCanvasY(x2_min));
+                    ctx.lineTo(toCanvasX(x1_max), toCanvasY(x2_max));
+                } else {
+                    // Vertical Line if w2 approx 0: w1*x1 + b = 0 => x1 = -b / w1
+                    const x1 = -b / w[0];
+                    ctx.moveTo(toCanvasX(x1), 0);
+                    ctx.lineTo(toCanvasX(x1), height);
+                }
+                ctx.stroke();
+
+                // Draw Normal Vector (Weight Vector Direction)
+                const originX = toCanvasX(0);
+                const originY = toCanvasY(0);
+                const normLen = Math.sqrt(w[0] * w[0] + w[1] * w[1]);
+                if (normLen > 0) {
+                    const scale = 60 / normLen;
+                    const targetX = originX + w[0] * scale;
+                    const targetY = originY - w[1] * scale; // invert Y for canvas
+
+                    ctx.strokeStyle = '#a855f7'; // Purple vector arrow
+                    ctx.lineWidth = 2;
+                    ctx.beginPath();
+                    ctx.moveTo(originX, originY);
+                    ctx.lineTo(targetX, targetY);
+                    ctx.stroke();
+
+                    // Arrow tip
+                    ctx.fillStyle = '#a855f7';
+                    ctx.beginPath();
+                    ctx.arc(targetX, targetY, 4, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+
+                ctx.restore();
+            }
+
+            // 4. Draw Data Points
+            points.forEach((pt, index) => {
+                const px = toCanvasX(pt.x1);
+                const py = toCanvasY(pt.x2);
+
+                ctx.beginPath();
+                ctx.arc(px, py, 7, 0, Math.PI * 2);
+
+                if (pt.label === 1) {
+                    ctx.fillStyle = '#10b981'; // Emerald Green
+                    ctx.strokeStyle = '#065f46';
+                } else {
+                    ctx.fillStyle = '#f43f5e'; // Rose Red
+                    ctx.strokeStyle = '#9f1239';
+                }
+                ctx.fill();
+                ctx.lineWidth = 2;
+                ctx.stroke();
+
+                // Highlight Active Evaluated Point
+                if (index === currentHighlightIndex) {
+                    ctx.beginPath();
+                    ctx.arc(px, py, 14, 0, Math.PI * 2);
+                    ctx.strokeStyle = '#38bdf8'; // Cyan ring
+                    ctx.lineWidth = 3;
+                    ctx.stroke();
+                }
+            });
+        }
+
+        // --- STREAMING_CHUNK:Implementing perceptron weight update animation loop... -->
+        // --- Perceptron Logic Execution ---
+        function calculatePrediction(x1, x2) {
+            const z = w[0] * x1 + w[1] * x2 + b;
+            return z >= 0 ? 1 : -1;
+        }
+
+        function trainStep() {
+            if (points.length === 0) {
+                stopTraining();
+                statusText.innerText = "Please add points or load a dataset first.";
+                return false;
+            }
+
+            const pt = points[currentPointIndex];
+            currentHighlightIndex = currentPointIndex;
+
+            const z = w[0] * pt.x1 + w[1] * pt.x2 + b;
+            const y_hat = z >= 0 ? 1 : -1;
+            const error = pt.label - y_hat; // 0 if correct, +2 or -2 if incorrect
+
+            let logged = false;
+
+            if (error !== 0) {
+                // Weight & Bias Update Rule
+                const dw1 = lr * error * pt.x1;
+                const dw2 = lr * error * pt.x2;
+                const db = lr * error;
+
+                w[0] += dw1;
+                w[1] += dw2;
+                b += db;
+
+                logMessage(
+                    `Point (${pt.x1.toFixed(1)}, ${pt.x2.toFixed(1)}) Target:${pt.label > 0 ? '+1' : '-1'}, Predicted:${y_hat > 0 ? '+1' : '-1'}. <span class="text-rose-400">MISCLASSIFIED</span><br>` +
+                    `&nbsp;&nbsp;&Delta;w₁=${dw1.toFixed(3)}, &Delta;w₂=${dw2.toFixed(3)}, &Delta;b=${db.toFixed(3)}`
+                );
+                logged = true;
+            }
+
+            // Move to next point
+            currentPointIndex++;
+            if (currentPointIndex >= points.length) {
+                currentPointIndex = 0;
+                epoch++;
+            }
+
+            updateDashboard();
+            draw();
+
+            // Check if all points are correctly classified
+            const errorsCount = countErrors();
+            if (errorsCount === 0 && points.length > 0) {
+                stopTraining();
+                statusText.innerHTML = `<span class="text-emerald-400 font-bold">SUCCESS! Perfect decision boundary line found in Epoch ${epoch}!</span>`;
+                logMessage(`<span class="text-emerald-400 font-bold">✔ Convergence achieved! All ${points.length} points correctly separated.</span>`);
+                return false;
+            }
+
+            return true;
+        }
+
+        function countErrors() {
+            let errors = 0;
+            points.forEach(pt => {
+                const pred = calculatePrediction(pt.x1, pt.x2);
+                if (pred !== pt.label) errors++;
+            });
+            return errors;
+        }
+
+        function updateDashboard() {
+            w1Display.innerText = w[0].toFixed(3);
+            w2Display.innerText = w[1].toFixed(3);
+            bDisplay.innerText = b.toFixed(3);
+
+            // Format Equation
+            const w1Str = `${w[0] >= 0 ? '' : ''}${w[0].toFixed(2)}x₁`;
+            const w2Str = `${w[1] >= 0 ? ' + ' : ' - '}${Math.abs(w[1]).toFixed(2)}x₂`;
+            const bStr = `${b >= 0 ? ' + ' : ' - '}${Math.abs(b).toFixed(2)}`;
+            eqDisplay.innerText = `${w1Str}${w2Str}${bStr} = 0`;
+
+            const errs = countErrors();
+            errorsDisplay.innerText = `${errs} / ${points.length}`;
+
+            const acc = points.length > 0 ? Math.round(((points.length - errs) / points.length) * 100) : 0;
+            accDisplay.innerText = `${acc}%`;
+
+            epochBadge.innerText = `Epoch: ${epoch}`;
+        }
+
+        function logMessage(msg) {
+            const entry = document.createElement('div');
+            entry.innerHTML = msg;
+            logContainer.prepend(entry);
+        }
+
+        // --- Training Controls ---
+        function startTraining() {
+            if (isTraining) {
+                stopTraining();
+                return;
+            }
+
+            if (countErrors() === 0 && points.length > 0) {
+                // If already converged, re-randomize weights slightly to demo again
+                w = [(Math.random() - 0.5), (Math.random() - 0.5)];
+                b = (Math.random() - 0.5);
+                epoch = 0;
+                currentPointIndex = 0;
+            }
+
+            isTraining = true;
+            btnPlay.innerHTML = `
+                <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path d="M5 4h3v12H5V4zm7 0h3v12h-3V4z"/></svg>
+                <span>Pause</span>
+            `;
+            btnPlay.classList.replace('bg-indigo-600', 'bg-amber-600');
+            btnPlay.classList.replace('hover:bg-indigo-500', 'hover:bg-amber-500');
+
+            statusText.innerText = "Training in progress...";
+
+            trainingInterval = setInterval(() => {
+                const continueTrain = trainStep();
+                if (!continueTrain) stopTraining();
+            }, animationSpeed);
+        }
+
+        function stopTraining() {
+            isTraining = false;
+            clearInterval(trainingInterval);
+            btnPlay.innerHTML = `
+                <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path d="M4 4l12 6-12 6V4z"/></svg>
+                <span>Start Training</span>
+            `;
+            btnPlay.classList.replace('bg-amber-600', 'bg-indigo-600');
+            btnPlay.classList.replace('hover:bg-amber-500', 'hover:bg-indigo-500');
+            currentHighlightIndex = -1;
+            draw();
+        }
+
+        function resetWeights() {
+            stopTraining();
+            w = [0.0, 0.0];
+            b = 0.0;
+            epoch = 0;
+            currentPointIndex = 0;
+            currentHighlightIndex = -1;
+            logContainer.innerHTML = '<div class="text-slate-600 italic">// Weights and bias reset to zero.</div>';
+            statusText.innerText = "Weights reset. Ready to start.";
+            updateDashboard();
+            draw();
+        }
+
+        function clearPoints() {
+            stopTraining();
+            points = [];
+            resetWeights();
+            statusText.innerText = "Data points cleared. Click on canvas to add points.";
+        }
+
+        // --- Preset Datasets ---
+        function loadPreset(type) {
+            stopTraining();
+            points = [];
+
+            if (type === 'separable') {
+                points = [
+                    { x1: 1.5, x2: 2.5, label: 1 },
+                    { x1: 2.0, x2: 3.5, label: 1 },
+                    { x1: 3.0, x2: 1.5, label: 1 },
+                    { x1: 3.5, x2: 3.0, label: 1 },
+                    { x1: -1.5, x2: -2.0, label: -1 },
+                    { x1: -2.5, x2: -1.0, label: -1 },
+                    { x1: -3.0, x2: -3.0, label: -1 },
+                    { x1: -1.0, x2: -3.5, label: -1 }
+                ];
+            } else if (type === 'and') {
+                points = [
+                    { x1: -2, x2: -2, label: -1 }, // (0, 0) -> -1
+                    { x1: 2,  x2: -2, label: -1 }, // (1, 0) -> -1
+                    { x1: -2, x2: 2,  label: -1 }, // (0, 1) -> -1
+                    { x1: 2,  x2: 2,  label: 1  }  // (1, 1) -> +1
+                ];
+            } else if (type === 'or') {
+                points = [
+                    { x1: -2, x2: -2, label: -1 }, // (0, 0) -> -1
+                    { x1: 2,  x2: -2, label: 1  }, // (1, 0) -> +1
+                    { x1: -2, x2: 2,  label: 1  }, // (0, 1) -> +1
+                    { x1: 2,  x2: 2,  label: 1  }  // (1, 1) -> +1
+                ];
+            } else if (type === 'xor') {
+                points = [
+                    { x1: -2, x2: -2, label: -1 }, // (0, 0) -> -1
+                    { x1: 2,  x2: -2, label: 1  }, // (1, 0) -> +1
+                    { x1: -2, x2: 2,  label: 1  }, // (0, 1) -> +1
+                    { x1: 2,  x2: 2,  label: -1 }  // (1, 1) -> -1
+                ];
+            }
+
+            // Update active preset button styles
+            document.querySelectorAll('.preset-btn').forEach(btn => {
+                btn.className = "preset-btn bg-slate-800 text-slate-400 border border-slate-700 p-2 rounded-lg text-left font-medium hover:bg-slate-700 transition";
+            });
+
+            resetWeights();
+            if (type === 'xor') {
+                statusText.innerHTML = '<span class="text-rose-400 font-bold">XOR Dataset Loaded: Single-layer Perceptron WILL fail to separate this!</span>';
+                logMessage('<span class="text-rose-400">// Note: XOR is not linearly separable. Watch how the boundary oscillates endlessly without converging.</span>');
+            } else {
+                statusText.innerText = `Loaded '${type.toUpperCase()}' dataset. Click 'Start Training'.`;
+            }
+        }
+
+        // --- Event Listeners ---
+        btnPlay.addEventListener('click', startTraining);
+        btnStep.addEventListener('click', () => {
+            stopTraining();
+            trainStep();
+        });
+        btnReset.addEventListener('click', resetWeights);
+        btnClearPoints.addEventListener('click', clearPoints);
+
+        lrSlider.addEventListener('input', (e) => {
+            lr = parseFloat(e.target.value);
+            lrValDisplay.innerText = lr.toFixed(2);
+        });
+
+        speedSlider.addEventListener('input', (e) => {
+            animationSpeed = parseInt(e.target.value);
+            speedValDisplay.innerText = `${animationSpeed}ms`;
+            if (isTraining) {
+                clearInterval(trainingInterval);
+                trainingInterval = setInterval(() => {
+                    const continueTrain = trainStep();
+                    if (!continueTrain) stopTraining();
+                }, animationSpeed);
+            }
+        });
+
+        // Toggle Class adding modes
+        btnClass1.addEventListener('click', () => {
+            activeClassLabel = 1;
+            btnClass1.className = "px-2.5 py-1 rounded-lg bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 font-semibold flex items-center gap-1";
+            btnClass2.className = "px-2.5 py-1 rounded-lg bg-slate-800 text-slate-400 border border-slate-700 font-medium flex items-center gap-1";
+        });
+
+        btnClass2.addEventListener('click', () => {
+            activeClassLabel = -1;
+            btnClass2.className = "px-2.5 py-1 rounded-lg bg-rose-500/20 text-rose-300 border border-rose-500/40 font-semibold flex items-center gap-1";
+            btnClass1.className = "px-2.5 py-1 rounded-lg bg-slate-800 text-slate-400 border border-slate-700 font-medium flex items-center gap-1";
+        });
+
+        // Canvas Click Listener (Custom Data Points)
+        canvas.addEventListener('pointerdown', (e) => {
+            const rect = canvas.getBoundingClientRect();
+            const clickX = e.clientX - rect.left;
+            const clickY = e.clientY - rect.top;
+
+            const mathX1 = toMathX(clickX);
+            const mathX2 = toMathY(clickY);
+
+            points.push({
+                x1: parseFloat(mathX1.toFixed(2)),
+                x2: parseFloat(mathX2.toFixed(2)),
+                label: activeClassLabel
+            });
+
+            updateDashboard();
+            draw();
+            logMessage(`Added point (${mathX1.toFixed(2)}, ${mathX2.toFixed(2)}) as Class ${activeClassLabel > 0 ? '+1' : '-1'}`);
+        });
+
+        // Initialize default preset on page load
+        window.onload = () => {
+            resizeCanvas();
+            loadPreset('separable');
+        };
+    </script>
+</body>
+</html>
