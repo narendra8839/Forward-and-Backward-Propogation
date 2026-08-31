@@ -20,13 +20,17 @@ This project implements **forward propagation** and **backpropagation** using **
 ```text
 Forward-and-Backward-Propogation/
 │
-├── data/
-|     |___                  
+├── PPT/
+|     └── Neural Network.pptx                
 │
-├── notebooks/             
+├── notebook/             
 │   └── analysis.ipynb
 | 
-├── images/               
+├── images/
+|      └── Logic_gate.png
+|      └── Perceptron_Anatomy.png
+|
+├── perceptron_learning_animation.html
 
 ## 🛠️ Requirements & Dependencies
 Make sure you have Python 3.8+ installed along with the following dependencies:
